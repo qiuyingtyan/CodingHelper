@@ -27,12 +27,13 @@ describe('generateSpecDoc', () => {
   it('includes coding standards', () => {
     const doc = generateSpecDoc({ config: baseConfig, requirements: '' });
     expect(doc).toContain('TypeScript 严格模式');
-    expect(doc).toContain('camelCase');
+    expect(doc).toContain('script setup');
   });
 
   it('includes test strategy', () => {
     const doc = generateSpecDoc({ config: baseConfig, requirements: '' });
     expect(doc).toContain('Vitest');
+    expect(doc).toContain('Vue Test Utils');
     expect(doc).toContain('80%');
   });
 });
@@ -66,5 +67,16 @@ describe('generateClaudeMd', () => {
     const md = generateClaudeMd({ config, requirements: '' });
     expect(md).toContain('前端：React');
     expect(md).not.toContain('后端：');
+  });
+
+  it('includes strategy-based coding standards', () => {
+    const md = generateClaudeMd({ config: baseConfig, requirements: '' });
+    expect(md).toContain('TypeScript 严格模式');
+    expect(md).toContain('script setup');
+  });
+
+  it('includes error handling section', () => {
+    const md = generateClaudeMd({ config: baseConfig, requirements: '' });
+    expect(md).toContain('错误处理');
   });
 });

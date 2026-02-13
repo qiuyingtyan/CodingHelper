@@ -1,9 +1,18 @@
 import { Command } from 'commander';
 import { runInit } from './commands/init.js';
+import type { InitOptions } from './commands/init.js';
 import { runPlan } from './commands/plan.js';
 import { runSpec } from './commands/spec.js';
+import type { SpecOptions } from './commands/spec.js';
 import { runTask } from './commands/task.js';
 import { runRun, runDone, runStatus } from './commands/run.js';
+import type { RunOptions } from './commands/run.js';
+import { runDebug } from './commands/debug.js';
+import type { DebugOptions } from './commands/debug.js';
+import { runReview } from './commands/review.js';
+import type { ReviewOptions } from './commands/review.js';
+import { runDashboard } from './commands/dashboard.js';
+import type { DashboardOptions } from './commands/dashboard.js';
 import { printError } from './utils/display.js';
 
 const program = new Command();
@@ -16,7 +25,8 @@ program
 program
   .command('init')
   .description('初始化项目，创建 .codinghelper/ 配置目录')
-  .action(wrapAction(runInit));
+  .option('-t, --template <name>', '使用预设模板快速初始化（如 vue-express, react-nestjs）')
+  .action(wrapAction((opts: InitOptions) => runInit(opts)));
 
 program
   .command('plan')
@@ -26,7 +36,8 @@ program
 program
   .command('spec')
   .description('生成技术规范和 CLAUDE.md')
-  .action(wrapAction(runSpec));
+  .option('--regenerate', '强制重新生成技术规范（覆盖已有文件）')
+  .action(wrapAction((opts: SpecOptions) => runSpec(opts)));
 
 program
   .command('task')
@@ -36,7 +47,10 @@ program
 program
   .command('run')
   .description('执行下一个待处理任务')
-  .action(wrapAction(runRun));
+  .option('--resume', '恢复上次中断的 in_progress 任务')
+  .option('--dry-run', '仅预览下一个任务，不修改状态')
+  .option('--all', '配合 --dry-run 展示所有待执行任务')
+  .action(wrapAction((opts: RunOptions) => runRun(opts)));
 
 program
   .command('done')
@@ -48,10 +62,32 @@ program
   .description('查看项目状态和任务进度')
   .action(wrapAction(runStatus));
 
-function wrapAction(fn: () => Promise<void>): () => Promise<void> {
-  return async () => {
+program
+  .command('debug')
+  .description('进入调试模式，生成调试指令并注入 CLAUDE.md')
+  .option('-s, --scope <scope>', '调试范围：front, back, db, all', 'all')
+  .option('-e, --error <message>', '错误日志或错误信息')
+  .action(wrapAction((opts: DebugOptions) => runDebug(opts)));
+
+program
+  .command('review')
+  .description('审查任务，支持 approve/reject 快捷标记')
+  .option('-a, --approve', '标记任务审查通过')
+  .option('-r, --reject', '驳回任务')
+  .option('-c, --comment <comment>', '审查备注')
+  .option('-t, --task <taskId>', '指定要审查的任务 ID')
+  .action(wrapAction((opts: ReviewOptions) => runReview(opts)));
+
+program
+  .command('dashboard')
+  .description('启动 Web Dashboard 可视化面板')
+  .option('-p, --port <port>', '服务器端口号', '3120')
+  .action(wrapAction((opts: DashboardOptions) => runDashboard(opts)));
+
+function wrapAction<T = void>(fn: (opts: T) => Promise<void>): (opts: T) => Promise<void> {
+  return async (opts: T) => {
     try {
-      await fn();
+      await fn(opts);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       printError(message);

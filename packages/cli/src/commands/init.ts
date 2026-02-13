@@ -11,6 +11,11 @@ import {
   type TechCategory,
   type TechSuggestion,
 } from '../core/suggestionEngine.js';
+import { findTemplate, listTemplates } from '../core/templates.js';
+
+export interface InitOptions {
+  template?: string;
+}
 
 const SKIP_VALUE = '__skip__';
 
@@ -65,7 +70,7 @@ async function pickTech(
   return chosen;
 }
 
-export async function runInit(): Promise<void> {
+export async function runInit(opts?: InitOptions): Promise<void> {
   printPhaseHeader('init', '初始化项目');
 
   const cwd = process.cwd();
@@ -74,6 +79,41 @@ export async function runInit(): Promise<void> {
   if (await fileExists(ctx.configPath)) {
     printError('项目已初始化。如需重新初始化，请先删除 .codinghelper/ 目录。');
     process.exitCode = 1;
+    return;
+  }
+
+  // 模板快速初始化
+  if (opts?.template) {
+    const tpl = findTemplate(opts.template);
+    if (!tpl) {
+      const available = listTemplates().map((t) => `  ${t.name} — ${t.description}`).join('\n');
+      printError(`未知模板 "${opts.template}"。可用模板：\n${available}`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const projectName = await input({
+      message: '项目名称：',
+      default: cwd.split(/[\\/]/).pop() ?? 'my-project',
+      validate: (v) => (v.trim().length > 0 ? true : '项目名称不能为空'),
+    });
+
+    const config: Config = {
+      projectName: projectName.trim(),
+      description: tpl.description,
+      techStack: { ...tpl.techStack },
+      createdAt: new Date().toISOString(),
+      currentPhase: 'init',
+      version: '1.0.0',
+    };
+
+    await ensureDir(ctx.helperDir);
+    await ensureDir(ctx.tasksDir);
+    await ensureDir(ctx.logsDir);
+    await saveConfig(ctx, config);
+
+    printSuccess(`项目 "${config.projectName}" 使用模板 "${tpl.name}" 初始化完成！`);
+    printInfo(`模板：${tpl.description}`);
     return;
   }
 
@@ -109,6 +149,7 @@ export async function runInit(): Promise<void> {
 
   await ensureDir(ctx.helperDir);
   await ensureDir(ctx.tasksDir);
+  await ensureDir(ctx.logsDir);
   await saveConfig(ctx, config);
 
   printSuccess(`项目 "${config.projectName}" 初始化完成！`);

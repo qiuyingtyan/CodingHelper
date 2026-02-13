@@ -11,7 +11,7 @@ import {
 
 describe('PhaseSchema', () => {
   it('accepts valid phases', () => {
-    for (const p of ['init', 'plan', 'spec', 'task', 'run']) {
+    for (const p of ['init', 'plan', 'spec', 'task', 'run', 'debug']) {
       expect(PhaseSchema.parse(p)).toBe(p);
     }
   });
@@ -27,6 +27,7 @@ describe('PHASE_ORDER', () => {
     expect(PHASE_ORDER.plan).toBeLessThan(PHASE_ORDER.spec);
     expect(PHASE_ORDER.spec).toBeLessThan(PHASE_ORDER.task);
     expect(PHASE_ORDER.task).toBeLessThan(PHASE_ORDER.run);
+    expect(PHASE_ORDER.run).toBeLessThan(PHASE_ORDER.debug);
   });
 });
 

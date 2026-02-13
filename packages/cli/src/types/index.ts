@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // --- Phase enum ---
-export const PhaseValues = ['init', 'plan', 'spec', 'task', 'run'] as const;
+export const PhaseValues = ['init', 'plan', 'spec', 'task', 'run', 'debug'] as const;
 export const PhaseSchema = z.enum(PhaseValues);
 export type Phase = z.infer<typeof PhaseSchema>;
 
@@ -11,7 +11,37 @@ export const PHASE_ORDER: Record<Phase, number> = {
   spec: 2,
   task: 3,
   run: 4,
+  debug: 5,
 };
+
+// --- ReviewStatus ---
+export const ReviewStatusValues = ['approved', 'rejected', 'needs_modification'] as const;
+export const ReviewStatusSchema = z.enum(ReviewStatusValues);
+export type ReviewStatus = z.infer<typeof ReviewStatusSchema>;
+
+// --- ReviewRecord ---
+export const ReviewRecordSchema = z.object({
+  taskId: z.string(),
+  status: ReviewStatusSchema,
+  reviewer: z.string(),
+  comment: z.string(),
+  timestamp: z.string(),
+});
+export type ReviewRecord = z.infer<typeof ReviewRecordSchema>;
+
+// --- DebugScope ---
+export const DebugScopeValues = ['front', 'back', 'db', 'all'] as const;
+export const DebugScopeSchema = z.enum(DebugScopeValues);
+export type DebugScope = z.infer<typeof DebugScopeSchema>;
+
+// --- DebugLog ---
+export const DebugLogSchema = z.object({
+  scope: DebugScopeSchema,
+  timestamp: z.string(),
+  findings: z.array(z.string()),
+  claudeMdInstructions: z.string(),
+});
+export type DebugLog = z.infer<typeof DebugLogSchema>;
 
 // --- TechStack ---
 export const TechStackSchema = z.object({

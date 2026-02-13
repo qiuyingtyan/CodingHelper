@@ -21,12 +21,32 @@ describe('splitRequirementsIntoTasks', () => {
     expect(result.tasks[2].title).toBe('个人中心');
   });
 
-  it('sets sequential dependencies', () => {
+  it('sets sequential dependencies as fallback', () => {
     const requirements = '## A\nbody\n## B\nbody\n## C\nbody';
     const result = splitRequirementsIntoTasks({ requirements, spec: '' });
     expect(result.tasks[0].dependencies).toEqual([]);
+    // 无语义关联时，回退到顺序依赖
     expect(result.tasks[1].dependencies).toEqual(['task-001']);
     expect(result.tasks[2].dependencies).toEqual(['task-002']);
+  });
+
+  it('detects semantic dependencies via keywords', () => {
+    const requirements = [
+      '## 数据库模型',
+      '创建用户表和文章表',
+      '',
+      '## API 接口',
+      '实现 REST API',
+      '',
+      '## 用户界面',
+      '基于 API 接口实现前端页面，展示数据库模型数据',
+    ].join('\n');
+    const result = splitRequirementsIntoTasks({ requirements, spec: '' });
+    expect(result.tasks[0].dependencies).toEqual([]);
+    // API 接口 → 依赖数据库模型（关键词匹配）
+    expect(result.tasks[1].dependencies).toContain('task-001');
+    // 用户界面 → 依赖 API 接口和数据库模型
+    expect(result.tasks[2].dependencies.length).toBeGreaterThanOrEqual(1);
   });
 
   it('generates correct execution order', () => {

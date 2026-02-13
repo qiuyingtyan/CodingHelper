@@ -3,18 +3,27 @@ import {
   loadConfig,
   saveConfig,
 } from '../utils/projectContext.js';
-import { readTextFile, writeTextFile } from '../utils/fs.js';
+import { readTextFile, writeTextFile, fileExists } from '../utils/fs.js';
 import { generateSpecDoc, generateClaudeMd } from '../core/specGenerator.js';
 import { requestApproval } from '../core/approvalManager.js';
 import { assertMinPhase } from '../utils/phaseGuard.js';
-import { printSuccess, printError, printPhaseHeader, printInfo } from '../utils/display.js';
+import { printSuccess, printError, printPhaseHeader, printInfo, printWarning } from '../utils/display.js';
 
-export async function runSpec(): Promise<void> {
+export interface SpecOptions {
+  regenerate?: boolean;
+}
+
+export async function runSpec(opts?: SpecOptions): Promise<void> {
   printPhaseHeader('spec', '技术规范生成');
 
   const ctx = await resolveProjectContext();
   const config = await loadConfig(ctx);
   assertMinPhase(config.currentPhase, 'plan');
+
+  // --regenerate: 跳过阶段检查，强制重新生成
+  if (opts?.regenerate && (await fileExists(ctx.specPath))) {
+    printWarning('重新生成技术规范（覆盖已有文件）...');
+  }
 
   const requirements = await readTextFile(ctx.requirementsPath);
   const specDoc = generateSpecDoc({ config, requirements });

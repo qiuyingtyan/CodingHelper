@@ -9,6 +9,7 @@ export const SPEC_FILE = 'spec.md';
 export const TASKS_DIR = 'tasks';
 export const TASK_INDEX_FILE = 'index.json';
 export const CLAUDE_MD_FILE = 'CLAUDE.md';
+export const LOGS_DIR = 'logs';
 
 export interface ProjectContext {
   readonly rootDir: string;
@@ -19,6 +20,7 @@ export interface ProjectContext {
   readonly tasksDir: string;
   readonly taskIndexPath: string;
   readonly claudeMdPath: string;
+  readonly logsDir: string;
 }
 
 export function buildProjectContext(rootDir: string): ProjectContext {
@@ -32,6 +34,7 @@ export function buildProjectContext(rootDir: string): ProjectContext {
     tasksDir: join(helperDir, TASKS_DIR),
     taskIndexPath: join(helperDir, TASKS_DIR, TASK_INDEX_FILE),
     claudeMdPath: join(rootDir, CLAUDE_MD_FILE),
+    logsDir: join(helperDir, LOGS_DIR),
   };
 }
 

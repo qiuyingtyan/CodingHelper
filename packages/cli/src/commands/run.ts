@@ -8,9 +8,17 @@ import { TaskIndexSchema } from '../types/index.js';
 import type { TaskItem } from '../types/index.js';
 import { assertMinPhase } from '../utils/phaseGuard.js';
 import { printSuccess, printError, printPhaseHeader, printTable, printInfo, printWarning } from '../utils/display.js';
+import { injectTaskContext, clearDynamicSections } from '../core/claudeMdManager.js';
+import { appendHistory } from '../core/historyManager.js';
 import { join } from 'node:path';
 
-export async function runRun(): Promise<void> {
+export interface RunOptions {
+  resume?: boolean;
+  dryRun?: boolean;
+  all?: boolean;
+}
+
+export async function runRun(opts?: RunOptions): Promise<void> {
   printPhaseHeader('run', '执行任务');
 
   const ctx = await resolveProjectContext();
@@ -18,10 +26,47 @@ export async function runRun(): Promise<void> {
   assertMinPhase(config.currentPhase, 'task');
 
   const taskIndex = await readJsonFile(ctx.taskIndexPath, TaskIndexSchema);
+
+  // --resume: 恢复上次中断的 in_progress 任务
+  if (opts?.resume) {
+    const inProgress = taskIndex.tasks.find((t) => t.status === 'in_progress');
+    if (!inProgress) {
+      printWarning('没有正在执行的任务可恢复。');
+      return;
+    }
+    printInfo(`恢复任务：${inProgress.id} — ${inProgress.title}`);
+    const taskFilePath = join(ctx.tasksDir, `${inProgress.id}.md`);
+    let taskContent = '';
+    try {
+      taskContent = await readTextFile(taskFilePath);
+      console.log('');
+      console.log(taskContent);
+    } catch {
+      printWarning(`任务文件 ${taskFilePath} 不存在，跳过内容展示。`);
+    }
+    await injectTaskContext(ctx, inProgress, taskContent);
+    await appendHistory(ctx, { taskId: inProgress.id, action: 'resumed' });
+    printInfo('任务上下文已重新注入 CLAUDE.md。');
+    return;
+  }
+
+  // --all + --dry-run: 展示所有待执行任务（不执行）
+  if (opts?.all && opts?.dryRun) {
+    const pending = taskIndex.tasks.filter((t) => t.status === 'pending');
+    if (pending.length === 0) {
+      printSuccess('所有任务已完成！');
+      return;
+    }
+    printInfo(`[Dry Run] 待执行任务（${pending.length} 个）：`);
+    printTable(pending);
+    return;
+  }
+
   const pendingTasks = taskIndex.tasks.filter((t) => t.status === 'pending');
 
   if (pendingTasks.length === 0) {
     printSuccess('所有任务已完成！');
+    await clearDynamicSections(ctx);
     return;
   }
 
@@ -41,16 +86,36 @@ export async function runRun(): Promise<void> {
     return;
   }
 
+  // --dry-run: 仅展示下一个任务，不修改状态
+  if (opts?.dryRun) {
+    printInfo(`[Dry Run] 下一个任务：${nextTask.id} — ${nextTask.title}`);
+    const taskFilePath = join(ctx.tasksDir, `${nextTask.id}.md`);
+    try {
+      const taskContent = await readTextFile(taskFilePath);
+      console.log('');
+      console.log(taskContent);
+    } catch {
+      printWarning(`任务文件 ${taskFilePath} 不存在。`);
+    }
+    printInfo('[Dry Run] 未修改任何状态。');
+    return;
+  }
+
   printInfo(`当前任务：${nextTask.id} — ${nextTask.title}`);
 
   const taskFilePath = join(ctx.tasksDir, `${nextTask.id}.md`);
+  let taskContent = '';
   try {
-    const taskContent = await readTextFile(taskFilePath);
+    taskContent = await readTextFile(taskFilePath);
     console.log('');
     console.log(taskContent);
   } catch {
     printWarning(`任务文件 ${taskFilePath} 不存在，跳过内容展示。`);
   }
+
+  // 注入任务上下文到 CLAUDE.md
+  await injectTaskContext(ctx, nextTask, taskContent);
+  await appendHistory(ctx, { taskId: nextTask.id, action: 'started' });
 
   printInfo('请将以上任务交给 Claude Code 执行，完成后运行 codinghelper done 标记完成。');
 
@@ -84,6 +149,10 @@ export async function runDone(): Promise<void> {
   );
 
   await writeJsonFile(ctx.taskIndexPath, { ...taskIndex, tasks: updatedTasks });
+  await appendHistory(ctx, { taskId: inProgress.id, action: 'completed' });
+
+  // 清除 CLAUDE.md 中的动态注入
+  await clearDynamicSections(ctx);
 
   printSuccess(`任务 ${inProgress.id}（${inProgress.title}）已标记为完成。`);
 
