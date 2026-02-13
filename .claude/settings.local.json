@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir C:CodingHelper)",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell.exe -Command \"Get-ChildItem C:\\\\CodingHelper\")",
+      "Bash(pnpm install:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsup:*)",
+      "Bash(node:*)",
+      "Bash(pnpm test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
