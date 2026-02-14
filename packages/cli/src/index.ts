@@ -29,23 +29,23 @@ program
   .command('init')
   .description('初始化项目，创建 .codinghelper/ 配置目录')
   .option('-t, --template <name>', '使用预设模板快速初始化（如 vue-express, react-nestjs）')
-  .action(wrapAction((opts: InitOptions) => runInit(opts)));
+  .action(wrapAction((opts: InitOptions) => runInit(opts), 'init'));
 
 program
   .command('plan')
   .description('需求分析，生成需求文档')
-  .action(wrapAction(runPlan));
+  .action(wrapAction(runPlan, 'plan'));
 
 program
   .command('spec')
   .description('生成技术规范和 CLAUDE.md')
   .option('--regenerate', '强制重新生成技术规范（覆盖已有文件）')
-  .action(wrapAction((opts: SpecOptions) => runSpec(opts)));
+  .action(wrapAction((opts: SpecOptions) => runSpec(opts), 'spec'));
 
 program
   .command('task')
   .description('将需求拆分为可执行的任务列表')
-  .action(wrapAction(runTask));
+  .action(wrapAction(runTask, 'task'));
 
 program
   .command('run')
@@ -53,12 +53,12 @@ program
   .option('--resume', '恢复上次中断的 in_progress 任务')
   .option('--dry-run', '仅预览下一个任务，不修改状态')
   .option('--all', '配合 --dry-run 展示所有待执行任务')
-  .action(wrapAction((opts: RunOptions) => runRun(opts)));
+  .action(wrapAction((opts: RunOptions) => runRun(opts), 'run'));
 
 program
   .command('done')
   .description('标记当前任务为已完成')
-  .action(wrapAction(runDone));
+  .action(wrapAction(runDone, 'done'));
 
 program
   .command('status')
@@ -94,10 +94,19 @@ program
   .option('-d, --days <days>', '归档超过 N 天的日志文件', '30')
   .action(wrapAction((opts: CompactOptions) => runCompact(opts)));
 
-function wrapAction<T = void>(fn: (opts: T) => Promise<void>): (opts: T) => Promise<void> {
+const MAIN_FLOW = new Set(['init', 'plan', 'spec', 'task', 'run', 'done']);
+
+function wrapAction<T = void>(
+  fn: (opts: T) => Promise<void>,
+  commandName?: string,
+): (opts: T) => Promise<void> {
   return async (opts: T) => {
     try {
       await fn(opts);
+      if (commandName && MAIN_FLOW.has(commandName) && process.exitCode !== 1) {
+        const { promptAdvance } = await import('./core/flowRunner.js');
+        await promptAdvance(commandName);
+      }
     } catch (err) {
       if (err instanceof DomainError) {
         printWarning(err.message);

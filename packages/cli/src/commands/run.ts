@@ -166,9 +166,7 @@ export async function runDone(): Promise<void> {
   printSuccess(`任务 ${inProgress.id}（${inProgress.title}）已标记为完成。`);
 
   const remaining = updatedTasks.filter((t) => t.status === 'pending');
-  if (remaining.length > 0) {
-    printInfo(`剩余 ${remaining.length} 个待执行任务。运行 codinghelper run 继续。`);
-  } else {
+  if (remaining.length === 0) {
     printSuccess('🎉 所有任务已完成！');
   }
 }

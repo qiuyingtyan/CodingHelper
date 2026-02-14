@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import chalk from 'chalk';
-import type { TaskItem } from '../types/index.js';
+import type { Phase, TaskItem } from '../types/index.js';
+import { PHASE_ORDER } from '../types/index.js';
 
 export function printSuccess(msg: string): void {
   console.log(chalk.green(`✓ ${msg}`));
@@ -21,6 +22,21 @@ export function printInfo(msg: string): void {
 export function printPhaseHeader(phase: string, title: string): void {
   console.log('');
   console.log(chalk.bold.underline(`[${phase.toUpperCase()}] ${title}`));
+  console.log('');
+}
+
+const VISUAL_PHASES: readonly Phase[] = ['init', 'plan', 'spec', 'task', 'run'];
+
+export function printProgress(currentPhase: Phase): void {
+  const segments = VISUAL_PHASES.map((phase) => {
+    const current = PHASE_ORDER[currentPhase] ?? -1;
+    const order = PHASE_ORDER[phase];
+    if (order < current) return chalk.green(`[✓] ${phase}`);
+    if (order === current) return chalk.cyan(`[●] ${phase}`);
+    return chalk.gray(`[ ] ${phase}`);
+  });
+  console.log('');
+  console.log(`  ${segments.join(chalk.gray(' → '))}`);
   console.log('');
 }
 
