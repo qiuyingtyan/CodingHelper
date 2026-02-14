@@ -1,9 +1,9 @@
-import { describe, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { buildProjectContext } from '../../utils/projectContext.js';
-import { ensureDir, writeTextFile } from '../../utils/fs.js';
+import { ensureDir, writeJsonFile, writeTextFile } from '../../utils/fs.js';
 import type { Config } from '../../types/index.js';
 
 function makeConfig(overrides?: Partial<Config>): Config {
@@ -22,7 +22,7 @@ let tempDir: string;
 let ctx: ReturnType<typeof buildProjectContext>;
 
 vi.mock('../../utils/projectContext.js', async (importOriginal) => {
-  const orig = await importOriginal() as Record<string, unknown>;
+  const orig = await importOriginal<typeof import('../../utils/projectContext.js')>();
   return {
     ...orig,
     resolveProjectContext: vi.fn(async () => ctx),

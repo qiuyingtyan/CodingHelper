@@ -1,4 +1,4 @@
-import { describe, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -22,7 +22,7 @@ let tempDir: string;
 let ctx: ReturnType<typeof buildProjectContext>;
 
 vi.mock('../../utils/projectContext.js', async (importOriginal) => {
-  const orig = await importOriginal() as Record<string, unknown>;
+  const orig = await importOriginal<typeof import('../../utils/projectContext.js')>();
   return {
     ...orig,
     resolveProjectContext: vi.fn(async () => ctx),
