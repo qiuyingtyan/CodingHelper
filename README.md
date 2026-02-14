@@ -1,6 +1,6 @@
 # CodingHelper
 
-AI 辅助编程工作流 CLI — 充当 Claude Code 的项目经理，将需求自动拆解为可执行的任务序列。
+AI 辅助编程工作流工具集 — 充当 Claude Code 的项目经理，将需求自动拆解为可执行的任务序列。提供 CLI、Web Dashboard 和共享核心库。
 
 ## 它解决什么问题
 
@@ -31,8 +31,10 @@ AI 辅助编程工作流 CLI — 充当 Claude Code 的项目经理，将需求�
 - **Repository 层** — 数据访问与业务逻辑分离，taskRepository / historyRepository / logRepository / configRepository
 - **Application Services** — taskService / projectService 封装跨层业务流程
 - **Server 分页支持** — Dashboard API 支持分页查询任务和历史记录
+- **Server 工作流操作** — POST API 支持通过 Web 触发需求生成、规范生成和任务拆分
 - **项目模板** — 8 套预设模板快速初始化（vue-express、react-nestjs、nextjs 等）
-- **Web Dashboard** — 可视化面板查看项目状态和任务进度
+- **Web Dashboard** — 可视化面板查看项目状态和任务进度，支持工作流操作面板
+- **共享核心库** — `@codinghelper/shared` 集中管理类型定义、规划器、规范策略、规范生成器和任务拆分器，CLI 和 Server 共用
 
 ## 安装
 
@@ -131,6 +133,29 @@ codinghelper dashboard --port 8080
 | `compact` | 压缩历史记录和日志 | `--keep <n>` `--days <n>` |
 | `dashboard` | 启动 Web 可视化面板 | `-p <port>` |
 
+## Server API
+
+GET 端点（数据查询）：
+
+| 端点 | 说明 |
+|------|------|
+| `GET /api/project` | 获取项目全量数据 |
+| `GET /api/config` | 获取项目配置 |
+| `GET /api/tasks` | 获取任务列表与执行顺序 |
+| `GET /api/spec` | 获取技术规范文档 |
+| `GET /api/requirements` | 获取需求文档 |
+| `GET /api/logs` | 获取操作日志（支持 `limit` / `offset` 分页） |
+| `GET /api/reviews` | 获取审查记录 |
+| `GET /api/debug-logs` | 获取调试日志 |
+
+POST 端点（工作流操作）：
+
+| 端点 | 说明 | 请求体 |
+|------|------|--------|
+| `POST /api/generate-requirements` | 生成需求文档 | `{ requirements, config }` |
+| `POST /api/generate-spec` | 生成技术规范和 CLAUDE.md | `{ requirements, config }` |
+| `POST /api/split-tasks` | 拆分任务并生成依赖关系 | `{ requirements, config }` |
+
 ## 生成的文件结构
 
 执行工作流后，项目目录下会生成：
@@ -158,6 +183,14 @@ codinghelper dashboard --port 8080
 ```
 CodingHelper/
 ├── packages/
+│   ├── shared/                      # 共享核心库 (@codinghelper/shared)
+│   │   └── src/
+│   │       ├── index.ts                 # 统一导出入口
+│   │       ├── types.ts                 # Zod schema 与类型定义
+│   │       ├── planner.ts               # 需求文档生成
+│   │       ├── specGenerator.ts         # 技术规范 & CLAUDE.md 生成
+│   │       ├── specStrategies.ts        # 策略模式（按技术栈适配规范）
+│   │       └── taskSplitter.ts          # 任务拆分与依赖分析（Kahn 拓扑排序）
 │   ├── cli/                         # CLI 命令行工具
 │   │   └── src/
 │   │       ├── commands/            # CLI 命令实现
@@ -170,11 +203,11 @@ CodingHelper/
 │   │       │   ├── review.ts            # 任务审查
 │   │       │   ├── compact.ts           # 历史压缩
 │   │       │   └── dashboard.ts         # Web Dashboard 启动
-│   │       ├── core/                # 核心引擎
-│   │       │   ├── planner.ts           # 需求文档生成
-│   │       │   ├── specGenerator.ts     # 技术规范生成
-│   │       │   ├── specStrategies.ts    # 策略模式（按技术栈适配规范）
-│   │       │   ├── taskSplitter.ts      # 任务拆分与依赖分析
+│   │       ├── core/                # 核心引擎（从 @codinghelper/shared 重新导出）
+│   │       │   ├── planner.ts           # → shared/planner
+│   │       │   ├── specGenerator.ts     # → shared/specGenerator
+│   │       │   ├── specStrategies.ts    # → shared/specStrategies
+│   │       │   ├── taskSplitter.ts      # → shared/taskSplitter
 │   │       │   ├── approvalManager.ts   # 审阅确认流程
 │   │       │   ├── suggestionEngine.ts  # 技术栈推荐与需求分析
 │   │       │   ├── claudeMdManager.ts   # CLAUDE.md 动态注入管理
@@ -191,21 +224,23 @@ CodingHelper/
 │   │       ├── services/           # 应用服务层
 │   │       │   ├── taskService.ts       # 任务业务流程
 │   │       │   └── projectService.ts    # 项目业务流程
-│   │       ├── types/               # Zod schema 与类型定义
+│   │       ├── types/               # 类型定义（从 @codinghelper/shared 重新导出）
 │   │       ├── utils/               # 工具函数（文件 I/O、终端显示等）
 │   │       └── __tests__/           # 集成测试
 │   ├── server/                      # Dashboard 后端 API
 │   │   └── src/
 │   │       ├── index.ts                 # 服务器入口
-│   │       ├── routes.ts               # API 路由
+│   │       ├── routes.ts                # API 路由（GET 查询 + POST 工作流操作）
+│   │       ├── actions.ts               # 服务器操作（生成需求/规范/任务拆分）
 │   │       └── dataReader.ts            # 项目数据读取
 │   └── dashboard/                   # Dashboard 前端（Vue 3 + Naive UI）
 │       └── src/
 │           ├── App.vue                    # 布局（侧边栏 + 路由视图）
 │           ├── composables/
-│           │   └── useApi.ts              # 通用数据请求 composable
+│           │   ├── useApi.ts              # 通用 GET 数据请求 composable
+│           │   └── usePost.ts             # 通用 POST 请求 composable
 │           └── views/
-│               ├── Overview.vue           # 项目概览（统计卡片、进度、技术栈）
+│               ├── Overview.vue           # 项目概览（统计卡片、进度、技术栈、工作流面板）
 │               ├── Tasks.vue              # 任务列表（表格、执行顺序）
 │               ├── Spec.vue               # 规范文档（技术规范 + 需求文档 Tab）
 │               ├── DebugLogs.vue          # 调试日志（按 scope 分类、findings 列表）
@@ -222,10 +257,11 @@ CodingHelper/
 | 类别 | 选型 |
 |------|------|
 | 语言 | TypeScript (strict mode, ESM) |
+| 共享核心库 | @codinghelper/shared（类型、规划器、规范策略、任务拆分） |
 | CLI 框架 | Commander.js |
 | 交互提示 | @inquirer/prompts |
 | 数据校验 | Zod |
-| 构建工具 | tsup |
+| 构建工具 | tsup（CLI / Server / Shared）、Vite（Dashboard） |
 | 测试框架 | Vitest |
 | Dashboard | Vue 3 + Naive UI + Vue Router |
 | Dashboard 服务 | Express + CORS |
@@ -238,10 +274,10 @@ CodingHelper/
 # 安装依赖
 pnpm install
 
-# 构建
+# 构建全部包（按依赖顺序：shared → cli / server / dashboard）
 pnpm build
 
-# 运行测试（228 个测试用例，36 个测试文件）
+# 运行测试
 pnpm test
 
 # 代码检查
@@ -249,6 +285,18 @@ pnpm lint
 
 # 开发模式（监听文件变化）
 cd packages/cli && pnpm dev
+```
+
+## 包依赖关系
+
+```
+@codinghelper/shared  ← 核心业务逻辑（类型、规划器、规范、任务拆分）
+    ↑           ↑
+    │           │
+@codinghelper/cli   @codinghelper/server  ← 重新导出 shared / 调用 shared
+                        ↑
+                        │
+                @codinghelper/dashboard  ← 通过 API 调用 server
 ```
 
 ## 测试覆盖

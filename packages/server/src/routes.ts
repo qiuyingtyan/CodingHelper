@@ -7,6 +7,11 @@ import {
   readRequirements,
   readLogs,
 } from './dataReader.js';
+import {
+  actionGenerateRequirements,
+  actionGenerateSpec,
+  actionSplitTasks,
+} from './actions.js';
 
 export function createRouter(rootDir: string): Router {
   const router = Router();
@@ -91,6 +96,50 @@ export function createRouter(rootDir: string): Router {
       res.json(debugLogs);
     } catch {
       res.status(500).json({ error: 'Failed to read debug logs' });
+    }
+  });
+
+  // --- POST routes: workflow actions ---
+
+  router.post('/api/generate-requirements', async (req: Request, res: Response) => {
+    try {
+      const { requirements, config } = req.body;
+      if (!requirements || !config) {
+        res.status(400).json({ error: 'Missing requirements or config' });
+        return;
+      }
+      const result = await actionGenerateRequirements(rootDir, { requirements, config });
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to generate requirements', detail: String(err) });
+    }
+  });
+
+  router.post('/api/generate-spec', async (req: Request, res: Response) => {
+    try {
+      const { requirements, config } = req.body;
+      if (!requirements || !config) {
+        res.status(400).json({ error: 'Missing requirements or config' });
+        return;
+      }
+      const result = await actionGenerateSpec(rootDir, { requirements, config });
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to generate spec', detail: String(err) });
+    }
+  });
+
+  router.post('/api/split-tasks', async (req: Request, res: Response) => {
+    try {
+      const { requirements, config } = req.body;
+      if (!requirements || !config) {
+        res.status(400).json({ error: 'Missing requirements or config' });
+        return;
+      }
+      const result = await actionSplitTasks(rootDir, { requirements, config });
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to split tasks', detail: String(err) });
     }
   });
 

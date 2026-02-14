@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { NCard, NGrid, NGridItem, NSpin, NAlert, NTag, NProgress } from 'naive-ui';
+import { NCard, NGrid, NGridItem, NSpin, NAlert, NTag, NProgress, NButton, NInput, NSpace, useMessage } from 'naive-ui';
 import { useApi } from '../composables/useApi';
-import { computed } from 'vue';
+import { usePost } from '../composables/usePost';
+import { computed, ref } from 'vue';
+
+const message = useMessage();
 
 interface Config {
   projectName?: string;
@@ -62,6 +65,31 @@ const taskProgress = computed(() => {
 const approvedCount = computed(() => reviews.value.filter(r => r.status === 'approved').length);
 const rejectedCount = computed(() => reviews.value.filter(r => r.status === 'rejected').length);
 const totalFindings = computed(() => debugLogs.value.reduce((sum, d) => sum + d.findings.length, 0));
+
+// --- Workflow ---
+const reqInput = ref('');
+
+const genReq = usePost<{ requirements: string; config: Config }, { path: string }>('/api/generate-requirements');
+const genSpec = usePost<{ requirements: string; config: Config }, { specPath: string; claudeMdPath: string }>('/api/generate-spec');
+const splitTasks = usePost<{ requirements: string; config: Config }, { path: string; taskCount: number }>('/api/split-tasks');
+
+async function handleGenRequirements() {
+  if (!reqInput.value.trim()) { message.warning('请输入需求内容'); return; }
+  const res = await genReq.execute({ requirements: reqInput.value, config: config.value });
+  if (res) message.success('需求文档已生成');
+}
+
+async function handleGenSpec() {
+  if (!reqInput.value.trim()) { message.warning('请输入需求内容'); return; }
+  const res = await genSpec.execute({ requirements: reqInput.value, config: config.value });
+  if (res) message.success('规范文档已生成');
+}
+
+async function handleSplitTasks() {
+  if (!reqInput.value.trim()) { message.warning('请输入需求内容'); return; }
+  const res = await splitTasks.execute({ requirements: reqInput.value, config: config.value });
+  if (res) message.success(`已拆分为 ${res.taskCount} 个任务`);
+}
 </script>
 
 <template>
@@ -124,6 +152,31 @@ const totalFindings = computed(() => debugLogs.value.reduce((sum, d) => sum + d.
           </NCard>
         </NGridItem>
       </NGrid>
+
+      <!-- Workflow panel -->
+      <NCard title="工作流" style="margin-bottom: 20px; border-radius: 10px;" size="small">
+        <NInput
+          v-model:value="reqInput"
+          type="textarea"
+          placeholder="输入项目需求描述..."
+          :rows="4"
+          style="margin-bottom: 12px;"
+        />
+        <NSpace>
+          <NButton type="primary" :loading="genReq.loading.value" @click="handleGenRequirements">
+            生成需求文档
+          </NButton>
+          <NButton type="info" :loading="genSpec.loading.value" @click="handleGenSpec">
+            生成规范
+          </NButton>
+          <NButton type="warning" :loading="splitTasks.loading.value" @click="handleSplitTasks">
+            拆分任务
+          </NButton>
+        </NSpace>
+        <NAlert v-if="genReq.error.value" type="error" style="margin-top: 10px;">{{ genReq.error.value }}</NAlert>
+        <NAlert v-if="genSpec.error.value" type="error" style="margin-top: 10px;">{{ genSpec.error.value }}</NAlert>
+        <NAlert v-if="splitTasks.error.value" type="error" style="margin-top: 10px;">{{ splitTasks.error.value }}</NAlert>
+      </NCard>
 
       <!-- Tech stack -->
       <NCard v-if="config.techStack" title="技术栈" style="border-radius: 10px;" size="small">

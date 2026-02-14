@@ -39,3 +39,8 @@ export function createServer(options: ServerOptions) {
 
 export { readProjectData } from './dataReader.js';
 export { createRouter } from './routes.js';
+export {
+  actionGenerateRequirements,
+  actionGenerateSpec,
+  actionSplitTasks,
+} from './actions.js';
