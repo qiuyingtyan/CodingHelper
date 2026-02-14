@@ -85,3 +85,14 @@ export const TaskIndexSchema = z.object({
   executionOrder: z.array(z.string()),
 });
 export type TaskIndex = z.infer<typeof TaskIndexSchema>;
+
+// --- HistorySummary ---
+export const HistorySummarySchema = z.object({
+  archivedAt: z.string(),
+  totalArchived: z.number().int().nonnegative(),
+  completedTasks: z.number().int().nonnegative(),
+  rejectedTasks: z.number().int().nonnegative(),
+  totalReviews: z.number().int().nonnegative(),
+  lastActiveAt: z.string().nullable(),
+});
+export type HistorySummary = z.infer<typeof HistorySummarySchema>;

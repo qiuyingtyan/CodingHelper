@@ -1,5 +1,12 @@
 import { Router, type Request, type Response } from 'express';
-import { readProjectData } from './dataReader.js';
+import {
+  readProjectData,
+  readConfig,
+  readTasks,
+  readSpec,
+  readRequirements,
+  readLogs,
+} from './dataReader.js';
 
 export function createRouter(rootDir: string): Router {
   const router = Router();
@@ -8,15 +15,15 @@ export function createRouter(rootDir: string): Router {
     try {
       const data = await readProjectData(rootDir);
       res.json(data);
-    } catch (err) {
+    } catch {
       res.status(500).json({ error: 'Failed to read project data' });
     }
   });
 
   router.get('/api/config', async (_req: Request, res: Response) => {
     try {
-      const data = await readProjectData(rootDir);
-      res.json(data.config ?? {});
+      const config = await readConfig(rootDir);
+      res.json(config ?? {});
     } catch {
       res.status(500).json({ error: 'Failed to read config' });
     }
@@ -24,8 +31,8 @@ export function createRouter(rootDir: string): Router {
 
   router.get('/api/tasks', async (_req: Request, res: Response) => {
     try {
-      const data = await readProjectData(rootDir);
-      res.json(data.tasks ?? { tasks: [], executionOrder: [] });
+      const tasks = await readTasks(rootDir);
+      res.json(tasks ?? { tasks: [], executionOrder: [] });
     } catch {
       res.status(500).json({ error: 'Failed to read tasks' });
     }
@@ -33,8 +40,8 @@ export function createRouter(rootDir: string): Router {
 
   router.get('/api/spec', async (_req: Request, res: Response) => {
     try {
-      const data = await readProjectData(rootDir);
-      res.json({ content: data.spec ?? '' });
+      const spec = await readSpec(rootDir);
+      res.json({ content: spec ?? '' });
     } catch {
       res.status(500).json({ error: 'Failed to read spec' });
     }
@@ -42,17 +49,19 @@ export function createRouter(rootDir: string): Router {
 
   router.get('/api/requirements', async (_req: Request, res: Response) => {
     try {
-      const data = await readProjectData(rootDir);
-      res.json({ content: data.requirements ?? '' });
+      const requirements = await readRequirements(rootDir);
+      res.json({ content: requirements ?? '' });
     } catch {
       res.status(500).json({ error: 'Failed to read requirements' });
     }
   });
 
-  router.get('/api/logs', async (_req: Request, res: Response) => {
+  router.get('/api/logs', async (req: Request, res: Response) => {
     try {
-      const data = await readProjectData(rootDir);
-      const parsed = data.logs.map(l => {
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const offset = req.query.offset ? Number(req.query.offset) : undefined;
+      const logs = await readLogs(rootDir, { limit, offset });
+      const parsed = logs.map(l => {
         try { return JSON.parse(l); } catch { return l; }
       });
       res.json(parsed);
@@ -63,8 +72,8 @@ export function createRouter(rootDir: string): Router {
 
   router.get('/api/reviews', async (_req: Request, res: Response) => {
     try {
-      const data = await readProjectData(rootDir);
-      const reviews = data.logs
+      const logs = await readLogs(rootDir);
+      const reviews = logs
         .map(l => { try { return JSON.parse(l); } catch { return null; } })
         .filter((l): l is Record<string, unknown> => l !== null && typeof l === 'object' && 'status' in l && 'reviewer' in l);
       res.json(reviews);
@@ -75,8 +84,8 @@ export function createRouter(rootDir: string): Router {
 
   router.get('/api/debug-logs', async (_req: Request, res: Response) => {
     try {
-      const data = await readProjectData(rootDir);
-      const debugLogs = data.logs
+      const logs = await readLogs(rootDir);
+      const debugLogs = logs
         .map(l => { try { return JSON.parse(l); } catch { return null; } })
         .filter((l): l is Record<string, unknown> => l !== null && typeof l === 'object' && 'scope' in l && 'findings' in l);
       res.json(debugLogs);

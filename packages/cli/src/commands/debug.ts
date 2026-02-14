@@ -54,6 +54,8 @@ export async function runDebug(options: DebugOptions): Promise<void> {
   // 输出摘要
   printInfo(`范围：${scope}`);
   printInfo(`发现 ${debugLog.findings.length} 项分析结果`);
+  // eslint-disable-next-line no-console
   console.log('');
+  // eslint-disable-next-line no-console
   console.log(debugLog.claudeMdInstructions);
 }

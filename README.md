@@ -24,6 +24,13 @@ AI 辅助编程工作流 CLI — 充当 Claude Code 的项目经理，将需求�
 - **任务审查** — 支持审批/驳回流程，记录审查历史
 - **任务状态追踪** — pending → in_progress → completed / rejected，支持恢复中断任务
 - **执行历史记录** — 自动记录所有任务操作（启动、完成、驳回、恢复）
+- **历史自动压缩** — 当历史记录超过阈值时自动归档旧条目，保持文件精简
+- **已完成任务摘要** — 自动将已完成任务摘要注入 CLAUDE.md，为后续任务提供上下文
+- **手动压缩命令** — `compact` 命令支持按保留条数或天数清理历史和日志
+- **领域错误体系** — 结构化错误类型（ConfigNotFound、TaskNotFound 等），提供清晰的错误提示
+- **Repository 层** — 数据访问与业务逻辑分离，taskRepository / historyRepository / logRepository / configRepository
+- **Application Services** — taskService / projectService 封装跨层业务流程
+- **Server 分页支持** — Dashboard API 支持分页查询任务和历史记录
 - **项目模板** — 8 套预设模板快速初始化（vue-express、react-nestjs、nextjs 等）
 - **Web Dashboard** — 可视化面板查看项目状态和任务进度
 
@@ -80,10 +87,15 @@ codinghelper debug --scope back            # 仅后端
 codinghelper debug --scope db              # 仅数据库
 codinghelper debug -e "TypeError: xxx"     # 附带错误信息
 
-# 8. 查看项目状态
+# 8. 压缩历史记录
+codinghelper compact              # 自动压缩（保留最近 50 条）
+codinghelper compact --keep 20    # 保留最近 20 条
+codinghelper compact --days 7     # 仅保留最近 7 天
+
+# 9. 查看项目状态
 codinghelper status
 
-# 9. 启动 Web Dashboard
+# 10. 启动 Web Dashboard
 codinghelper dashboard
 codinghelper dashboard --port 8080
 ```
@@ -116,6 +128,7 @@ codinghelper dashboard --port 8080
 | `status` | 查看项目进度 | — |
 | `debug` | 生成调试指令 | `-s <scope>` `-e <error>` |
 | `review` | 任务审查 | `-a` `-r` `-c <comment>` `-t <taskId>` |
+| `compact` | 压缩历史记录和日志 | `--keep <n>` `--days <n>` |
 | `dashboard` | 启动 Web 可视化面板 | `-p <port>` |
 
 ## 生成的文件结构
@@ -136,7 +149,8 @@ codinghelper dashboard --port 8080
 └── logs/
     ├── history.json     # 任务执行历史记录
     ├── debug-*.json     # 调试分析日志
-    └── review-*.json    # 审查记录
+    ├── review-*.json    # 审查记录
+    └── archive/         # 压缩归档的历史记录
 ```
 
 ## 项目源码结构
@@ -154,6 +168,7 @@ CodingHelper/
 │   │       │   ├── run.ts               # 任务执行 / done / status
 │   │       │   ├── debug.ts             # 调试分析
 │   │       │   ├── review.ts            # 任务审查
+│   │       │   ├── compact.ts           # 历史压缩
 │   │       │   └── dashboard.ts         # Web Dashboard 启动
 │   │       ├── core/                # 核心引擎
 │   │       │   ├── planner.ts           # 需求文档生成
@@ -164,8 +179,18 @@ CodingHelper/
 │   │       │   ├── suggestionEngine.ts  # 技术栈推荐与需求分析
 │   │       │   ├── claudeMdManager.ts   # CLAUDE.md 动态注入管理
 │   │       │   ├── debugOrchestrator.ts # 调试指令生成
-│   │       │   ├── historyManager.ts    # 执行历史记录
+│   │       │   ├── historyManager.ts    # 执行历史记录与自动压缩
 │   │       │   └── templates.ts         # 项目模板定义
+│   │       ├── errors/             # 领域错误定义
+│   │       │   └── domainErrors.ts      # 结构化错误类型
+│   │       ├── repositories/       # 数据访问层
+│   │       │   ├── taskRepository.ts    # 任务数据读写
+│   │       │   ├── historyRepository.ts # 历史记录读写
+│   │       │   ├── logRepository.ts     # 日志读写
+│   │       │   └── configRepository.ts  # 配置读写
+│   │       ├── services/           # 应用服务层
+│   │       │   ├── taskService.ts       # 任务业务流程
+│   │       │   └── projectService.ts    # 项目业务流程
 │   │       ├── types/               # Zod schema 与类型定义
 │   │       ├── utils/               # 工具函数（文件 I/O、终端显示等）
 │   │       └── __tests__/           # 集成测试
@@ -191,7 +216,8 @@ CodingHelper/
 | 数据校验 | Zod |
 | 构建工具 | tsup |
 | 测试框架 | Vitest |
-| Dashboard | Vue 3 + Fastify |
+| Dashboard | Vue 3 + Express |
+| 代码规范 | ESLint 9 + Prettier + typescript-eslint 8 |
 | 包管理 | pnpm (monorepo workspace) |
 
 ## 开发
@@ -203,8 +229,11 @@ pnpm install
 # 构建
 pnpm build
 
-# 运行测试（122 个测试用例）
+# 运行测试（145 个测试用例）
 pnpm test
+
+# 代码检查
+pnpm lint
 
 # 开发模式（监听文件变化）
 cd packages/cli && pnpm dev
@@ -221,6 +250,10 @@ cd packages/cli && pnpm dev
 | 调试编排 | debugOrchestrator.test.ts | 7 |
 | CLAUDE.md 管理 | claudeMdManager.test.ts | 5 |
 | 历史记录 | historyManager.test.ts | 6 |
+| 历史压缩 | compactHistory.test.ts | 3 |
+| 已完成摘要 | completedSummary.test.ts | 3 |
+| 领域错误 | domainErrors.test.ts | 4 |
+| 任务仓库 | taskRepository.test.ts | 5 |
 | 模板 | templates.test.ts | 6 |
 | 需求规划 | planner.test.ts | 5 |
 | 任务审查 | review.test.ts | 11 |
@@ -228,6 +261,7 @@ cd packages/cli && pnpm dev
 | 项目上下文 | projectContext.test.ts | 5 |
 | 集成测试 | integration.test.ts | 3 |
 | 数据读取 | dataReader.test.ts | 5 |
+| 分页数据读取 | dataReaderIndividual.test.ts | 8 |
 | API 路由 | routes.test.ts | 8 |
 
 ## 环境要求

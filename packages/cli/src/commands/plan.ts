@@ -79,6 +79,7 @@ export async function runPlan(): Promise<void> {
   const doc = generateRequirementsDoc({ requirements: merged, config });
 
   printInfo('--- 需求文档预览 ---');
+  // eslint-disable-next-line no-console
   console.log(doc);
   printInfo('--- 预览结束 ---');
 

@@ -1,4 +1,4 @@
-import { input, search, confirm } from '@inquirer/prompts';
+import { input, search } from '@inquirer/prompts';
 import type { Config } from '../types/index.js';
 import {
   buildProjectContext,

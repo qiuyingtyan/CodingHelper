@@ -6,6 +6,8 @@ const TASK_SECTION_START = '<!-- CURRENT_TASK_START -->';
 const TASK_SECTION_END = '<!-- CURRENT_TASK_END -->';
 const DEBUG_SECTION_START = '<!-- DEBUG_CONTEXT_START -->';
 const DEBUG_SECTION_END = '<!-- DEBUG_CONTEXT_END -->';
+const COMPLETED_SUMMARY_START = '<!-- COMPLETED_SUMMARY_START -->';
+const COMPLETED_SUMMARY_END = '<!-- COMPLETED_SUMMARY_END -->';
 
 /**
  * 在 CLAUDE.md 中注入当前任务上下文，让 Claude Code 了解正在执行的任务。
@@ -59,6 +61,45 @@ export async function injectDebugContext(
   ].join('\n');
 
   claudeMd = claudeMd.trimEnd() + '\n' + injection;
+  await writeTextFile(ctx.claudeMdPath, claudeMd);
+}
+
+/**
+ * 在 CLAUDE.md 中追加已完成任务的摘要记录。
+ */
+export async function injectCompletedSummary(
+  ctx: ProjectContext,
+  task: TaskItem,
+): Promise<void> {
+  if (!(await fileExists(ctx.claudeMdPath))) return;
+
+  let claudeMd = await readTextFile(ctx.claudeMdPath);
+
+  const completedAt = task.completedAt ?? new Date().toISOString();
+  const newLine = `- [${task.id}] ${task.title}（${completedAt}）`;
+
+  const startIdx = claudeMd.indexOf(COMPLETED_SUMMARY_START);
+  const endIdx = claudeMd.indexOf(COMPLETED_SUMMARY_END);
+
+  if (startIdx !== -1 && endIdx !== -1) {
+    // Append to existing summary section
+    const before = claudeMd.slice(0, endIdx).trimEnd();
+    const after = claudeMd.slice(endIdx);
+    claudeMd = before + '\n' + newLine + '\n' + after;
+  } else {
+    // Create new summary section
+    const section = [
+      '',
+      COMPLETED_SUMMARY_START,
+      '## 已完成任务摘要',
+      '',
+      newLine,
+      COMPLETED_SUMMARY_END,
+      '',
+    ].join('\n');
+    claudeMd = claudeMd.trimEnd() + '\n' + section;
+  }
+
   await writeTextFile(ctx.claudeMdPath, claudeMd);
 }
 

@@ -6,7 +6,7 @@ import { readJsonFile, writeJsonFile } from '../utils/fs.js';
 import { TaskIndexSchema, ReviewRecordSchema } from '../types/index.js';
 import type { ReviewRecord, ReviewStatus, TaskItem } from '../types/index.js';
 import { assertMinPhase } from '../utils/phaseGuard.js';
-import { printSuccess, printInfo, printPhaseHeader, printWarning, printError, printTable } from '../utils/display.js';
+import { printSuccess, printInfo, printPhaseHeader, printWarning, printTable } from '../utils/display.js';
 import { join } from 'node:path';
 
 export interface ReviewOptions {

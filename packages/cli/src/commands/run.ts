@@ -5,10 +5,9 @@ import {
 } from '../utils/projectContext.js';
 import { readJsonFile, readTextFile, writeJsonFile } from '../utils/fs.js';
 import { TaskIndexSchema } from '../types/index.js';
-import type { TaskItem } from '../types/index.js';
 import { assertMinPhase } from '../utils/phaseGuard.js';
-import { printSuccess, printError, printPhaseHeader, printTable, printInfo, printWarning } from '../utils/display.js';
-import { injectTaskContext, clearDynamicSections } from '../core/claudeMdManager.js';
+import { printSuccess, printPhaseHeader, printTable, printInfo, printWarning } from '../utils/display.js';
+import { injectTaskContext, clearDynamicSections, injectCompletedSummary } from '../core/claudeMdManager.js';
 import { appendHistory } from '../core/historyManager.js';
 import { join } from 'node:path';
 
@@ -39,7 +38,9 @@ export async function runRun(opts?: RunOptions): Promise<void> {
     let taskContent = '';
     try {
       taskContent = await readTextFile(taskFilePath);
+      // eslint-disable-next-line no-console
       console.log('');
+      // eslint-disable-next-line no-console
       console.log(taskContent);
     } catch {
       printWarning(`任务文件 ${taskFilePath} 不存在，跳过内容展示。`);
@@ -92,7 +93,9 @@ export async function runRun(opts?: RunOptions): Promise<void> {
     const taskFilePath = join(ctx.tasksDir, `${nextTask.id}.md`);
     try {
       const taskContent = await readTextFile(taskFilePath);
+      // eslint-disable-next-line no-console
       console.log('');
+      // eslint-disable-next-line no-console
       console.log(taskContent);
     } catch {
       printWarning(`任务文件 ${taskFilePath} 不存在。`);
@@ -107,7 +110,9 @@ export async function runRun(opts?: RunOptions): Promise<void> {
   let taskContent = '';
   try {
     taskContent = await readTextFile(taskFilePath);
+    // eslint-disable-next-line no-console
     console.log('');
+    // eslint-disable-next-line no-console
     console.log(taskContent);
   } catch {
     printWarning(`任务文件 ${taskFilePath} 不存在，跳过内容展示。`);
@@ -150,6 +155,10 @@ export async function runDone(): Promise<void> {
 
   await writeJsonFile(ctx.taskIndexPath, { ...taskIndex, tasks: updatedTasks });
   await appendHistory(ctx, { taskId: inProgress.id, action: 'completed' });
+
+  // 注入已完成任务摘要到 CLAUDE.md
+  const completedTask = updatedTasks.find(t => t.id === inProgress.id)!;
+  await injectCompletedSummary(ctx, completedTask);
 
   // 清除 CLAUDE.md 中的动态注入
   await clearDynamicSections(ctx);

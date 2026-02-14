@@ -30,6 +30,7 @@ export async function runSpec(opts?: SpecOptions): Promise<void> {
   const claudeMd = generateClaudeMd({ config, requirements });
 
   printInfo('--- 技术规范预览 ---');
+  // eslint-disable-next-line no-console
   console.log(specDoc);
   printInfo('--- 预览结束 ---');
 

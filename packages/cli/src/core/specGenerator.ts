@@ -7,7 +7,7 @@ export interface SpecInput {
 }
 
 export function generateSpecDoc(input: SpecInput): string {
-  const { config, requirements } = input;
+  const { config } = input;
   const { projectName, techStack } = config;
   const strategy = resolveSpecStrategy(techStack);
 

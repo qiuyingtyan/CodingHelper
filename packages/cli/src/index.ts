@@ -13,7 +13,10 @@ import { runReview } from './commands/review.js';
 import type { ReviewOptions } from './commands/review.js';
 import { runDashboard } from './commands/dashboard.js';
 import type { DashboardOptions } from './commands/dashboard.js';
-import { printError } from './utils/display.js';
+import { runCompact } from './commands/compact.js';
+import type { CompactOptions } from './commands/compact.js';
+import { printError, printWarning } from './utils/display.js';
+import { DomainError } from './errors/domainErrors.js';
 
 const program = new Command();
 
@@ -84,13 +87,24 @@ program
   .option('-p, --port <port>', '服务器端口号', '3120')
   .action(wrapAction((opts: DashboardOptions) => runDashboard(opts)));
 
+program
+  .command('compact')
+  .description('压缩历史记录和日志，释放上下文空间')
+  .option('-k, --keep <count>', '保留最近 N 条历史记录', '50')
+  .option('-d, --days <days>', '归档超过 N 天的日志文件', '30')
+  .action(wrapAction((opts: CompactOptions) => runCompact(opts)));
+
 function wrapAction<T = void>(fn: (opts: T) => Promise<void>): (opts: T) => Promise<void> {
   return async (opts: T) => {
     try {
       await fn(opts);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      printError(message);
+      if (err instanceof DomainError) {
+        printWarning(err.message);
+      } else {
+        const message = err instanceof Error ? err.message : String(err);
+        printError(message);
+      }
       process.exitCode = 1;
     }
   };

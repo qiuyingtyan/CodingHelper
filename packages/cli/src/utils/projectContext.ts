@@ -1,6 +1,7 @@
 import { join, resolve } from 'node:path';
 import { type Config, ConfigSchema } from '../types/index.js';
 import { readJsonFile, writeJsonFile, fileExists } from './fs.js';
+import { ProjectNotInitializedError } from '../errors/domainErrors.js';
 
 export const CODINGHELPER_DIR = '.codinghelper';
 export const CONFIG_FILE = 'config.json';
@@ -52,9 +53,7 @@ export async function resolveProjectContext(startDir?: string): Promise<ProjectC
     dir = parent;
   }
 
-  throw new Error(
-    '未找到 .codinghelper/ 目录。请先运行 codinghelper init 初始化项目。'
-  );
+  throw new ProjectNotInitializedError();
 }
 
 export async function loadConfig(ctx: ProjectContext): Promise<Config> {

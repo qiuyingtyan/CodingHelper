@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import chalk from 'chalk';
 import type { TaskItem } from '../types/index.js';
 

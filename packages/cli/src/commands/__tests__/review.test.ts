@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { buildProjectContext } from '../../utils/projectContext.js';
-import { ensureDir, writeJsonFile, readJsonFile, writeTextFile, fileExists } from '../../utils/fs.js';
+import { ensureDir, writeJsonFile, readJsonFile, fileExists } from '../../utils/fs.js';
 import { TaskIndexSchema, ReviewRecordSchema } from '../../types/index.js';
 import type { Config, TaskItem, ReviewRecord } from '../../types/index.js';
 // We test the review logic by simulating what runReview does,
