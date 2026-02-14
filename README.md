@@ -211,10 +211,6 @@ CodingHelper/
 │               ├── DebugLogs.vue          # 调试日志（按 scope 分类、findings 列表）
 │               ├── Reviews.vue            # 审查记录（状态标签、分页表格）
 │               └── Logs.vue               # 操作日志（类型检测、折叠面板）
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                     # CI 流水线（lint → test → build）
-│       └── release.yml                # 发布流水线（tag 触发 → npm 发布）
 ├── docs/
 │   └── dev-guide.md                 # 开发文档
 ├── package.json                     # pnpm workspace 根配置
@@ -233,18 +229,8 @@ CodingHelper/
 | 测试框架 | Vitest |
 | Dashboard | Vue 3 + Naive UI + Vue Router |
 | Dashboard 服务 | Express + CORS |
-| CI/CD | GitHub Actions（Node 18/20/22 矩阵） |
 | 代码规范 | ESLint 9 + Prettier + typescript-eslint 8 |
 | 包管理 | pnpm (monorepo workspace) |
-
-## CI/CD
-
-项目配置了 GitHub Actions 自动化流水线：
-
-| 工作流 | 触发条件 | 内容 |
-|--------|----------|------|
-| CI | push / PR → main | Lint → Test → Build（Node 18/20/22 矩阵），上传 CLI 和 Dashboard 构建产物 |
-| Release | 推送 `v*` 标签 | Lint → Test → Build → 创建 GitHub Release → 发布到 npm |
 
 ## 开发
 
