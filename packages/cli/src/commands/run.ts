@@ -179,6 +179,17 @@ export async function runStatus(): Promise<void> {
   printPhaseHeader('status', `项目状态 — ${config.projectName}`);
   printInfo(`当前阶段：${config.currentPhase}`);
 
+  // Project stats from service layer
+  try {
+    const { getProjectStats } = await import('../services/projectService.js');
+    const stats = await getProjectStats(ctx);
+    printInfo(`历史记录：${stats.historyTotal} 条（完成 ${stats.historyCompleted}，驳回 ${stats.historyRejected}）`);
+    const sizeMB = (stats.logTotalSize / 1024 / 1024).toFixed(2);
+    printInfo(`日志文件：${stats.logFileCount} 个（共 ${sizeMB} MB）`);
+  } catch {
+    // stats unavailable — skip silently
+  }
+
   try {
     const taskIndex = await readJsonFile(ctx.taskIndexPath, TaskIndexSchema);
     const completed = taskIndex.tasks.filter((t) => t.status === 'completed').length;

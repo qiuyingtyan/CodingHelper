@@ -1,5 +1,5 @@
 import { resolveProjectContext } from '../utils/projectContext.js';
-import { compactHistory } from '../core/historyManager.js';
+import { compactProject } from '../services/projectService.js';
 import { printSuccess, printInfo, printPhaseHeader } from '../utils/display.js';
 import { join } from 'node:path';
 import { readdir, stat, rename } from 'node:fs/promises';
@@ -17,9 +17,9 @@ export async function runCompact(opts?: CompactOptions): Promise<void> {
   const keepRecent = opts?.keep ? Number(opts.keep) : 50;
   const maxDays = opts?.days ? Number(opts.days) : 30;
 
-  // 1. Compact history
+  // 1. Compact history via service layer
   printInfo('正在压缩历史记录...');
-  const { archived, remaining } = await compactHistory(ctx, keepRecent);
+  const { archived, remaining } = await compactProject(ctx, keepRecent);
   if (archived > 0) {
     printSuccess(`已归档 ${archived} 条历史记录，保留最近 ${remaining} 条。`);
   } else {

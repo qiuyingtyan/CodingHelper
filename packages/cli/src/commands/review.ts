@@ -7,6 +7,7 @@ import { TaskIndexSchema, ReviewRecordSchema } from '../types/index.js';
 import type { ReviewRecord, ReviewStatus, TaskItem } from '../types/index.js';
 import { assertMinPhase } from '../utils/phaseGuard.js';
 import { printSuccess, printInfo, printPhaseHeader, printWarning, printTable } from '../utils/display.js';
+import { InvalidReviewTargetError } from '../errors/domainErrors.js';
 import { join } from 'node:path';
 
 export interface ReviewOptions {
@@ -28,9 +29,8 @@ export async function runReview(options: ReviewOptions): Promise<void> {
   // 确定要审查的任务
   const target = resolveTarget(taskIndex.tasks, options.task);
   if (!target) {
-    printWarning('没有找到可审查的任务。只有 completed 或 in_progress 状态的任务可以审查。');
     printTable(taskIndex.tasks);
-    return;
+    throw new InvalidReviewTargetError();
   }
 
   // 确定审查结果

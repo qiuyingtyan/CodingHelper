@@ -199,7 +199,22 @@ CodingHelper/
 │   │       ├── index.ts                 # 服务器入口
 │   │       ├── routes.ts               # API 路由
 │   │       └── dataReader.ts            # 项目数据读取
-│   └── dashboard/                   # Dashboard 前端（Vue 3）
+│   └── dashboard/                   # Dashboard 前端（Vue 3 + Naive UI）
+│       └── src/
+│           ├── App.vue                    # 布局（侧边栏 + 路由视图）
+│           ├── composables/
+│           │   └── useApi.ts              # 通用数据请求 composable
+│           └── views/
+│               ├── Overview.vue           # 项目概览（统计卡片、进度、技术栈）
+│               ├── Tasks.vue              # 任务列表（表格、执行顺序）
+│               ├── Spec.vue               # 规范文档（技术规范 + 需求文档 Tab）
+│               ├── DebugLogs.vue          # 调试日志（按 scope 分类、findings 列表）
+│               ├── Reviews.vue            # 审查记录（状态标签、分页表格）
+│               └── Logs.vue               # 操作日志（类型检测、折叠面板）
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                     # CI 流水线（lint → test → build）
+│       └── release.yml                # 发布流水线（tag 触发 → npm 发布）
 ├── docs/
 │   └── dev-guide.md                 # 开发文档
 ├── package.json                     # pnpm workspace 根配置
@@ -216,9 +231,20 @@ CodingHelper/
 | 数据校验 | Zod |
 | 构建工具 | tsup |
 | 测试框架 | Vitest |
-| Dashboard | Vue 3 + Express |
+| Dashboard | Vue 3 + Naive UI + Vue Router |
+| Dashboard 服务 | Express + CORS |
+| CI/CD | GitHub Actions（Node 18/20/22 矩阵） |
 | 代码规范 | ESLint 9 + Prettier + typescript-eslint 8 |
 | 包管理 | pnpm (monorepo workspace) |
+
+## CI/CD
+
+项目配置了 GitHub Actions 自动化流水线：
+
+| 工作流 | 触发条件 | 内容 |
+|--------|----------|------|
+| CI | push / PR → main | Lint → Test → Build（Node 18/20/22 矩阵），上传 CLI 和 Dashboard 构建产物 |
+| Release | 推送 `v*` 标签 | Lint → Test → Build → 创建 GitHub Release → 发布到 npm |
 
 ## 开发
 
@@ -229,7 +255,7 @@ pnpm install
 # 构建
 pnpm build
 
-# 运行测试（145 个测试用例）
+# 运行测试（228 个测试用例，36 个测试文件）
 pnpm test
 
 # 代码检查
@@ -241,28 +267,26 @@ cd packages/cli && pnpm dev
 
 ## 测试覆盖
 
-| 模块 | 测试文件 | 用例数 |
-|------|----------|--------|
-| 类型 Schema | schemas.test.ts | 13 |
-| 建议引擎 | suggestionEngine.test.ts | 20 |
-| 规范生成 | specGenerator.test.ts | 11 |
-| 任务拆分 | taskSplitter.test.ts | 10 |
-| 调试编排 | debugOrchestrator.test.ts | 7 |
-| CLAUDE.md 管理 | claudeMdManager.test.ts | 5 |
-| 历史记录 | historyManager.test.ts | 6 |
-| 历史压缩 | compactHistory.test.ts | 3 |
-| 已完成摘要 | completedSummary.test.ts | 3 |
-| 领域错误 | domainErrors.test.ts | 4 |
-| 任务仓库 | taskRepository.test.ts | 5 |
-| 模板 | templates.test.ts | 6 |
-| 需求规划 | planner.test.ts | 5 |
-| 任务审查 | review.test.ts | 11 |
-| 文件工具 | fs.test.ts | 7 |
-| 项目上下文 | projectContext.test.ts | 5 |
-| 集成测试 | integration.test.ts | 3 |
-| 数据读取 | dataReader.test.ts | 5 |
-| 分页数据读取 | dataReaderIndividual.test.ts | 8 |
-| API 路由 | routes.test.ts | 8 |
+CLI 包（207 用例，33 个测试文件）：
+
+| 分类 | 测试文件 | 说明 |
+|------|----------|------|
+| 核心引擎 | planner, suggestionEngine, specGenerator, specStrategies, taskSplitter, debugOrchestrator, claudeMdManager, historyManager, compactHistory, completedSummary, templates, approvalManager | 需求分析、规范生成、任务拆分、调试、历史管理等 |
+| 命令 | init, plan, spec, task, run, debug, review, compact | 全部 8 个 CLI 命令 |
+| Repository | taskRepository, historyRepository, logRepository, configRepository | 数据访问层 |
+| Service | taskService, projectService | 应用服务层 |
+| 工具 | fs, projectContext, display, phaseGuard | 文件 I/O、上下文、显示、阶段守卫 |
+| 类型 | schemas | Zod schema 验证 |
+| 错误 | domainErrors | 领域错误类型 |
+| 集成 | integration | 端到端流程 |
+
+Server 包（21 用例，3 个测试文件）：
+
+| 测试文件 | 说明 |
+|----------|------|
+| dataReader | 全量数据读取 |
+| dataReaderIndividual | 按需读取与分页 |
+| routes | API 路由端点 |
 
 ## 环境要求
 
