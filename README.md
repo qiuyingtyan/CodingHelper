@@ -299,29 +299,6 @@ cd packages/cli && pnpm dev
                 @codinghelper/dashboard  ← 通过 API 调用 server
 ```
 
-## 测试覆盖
-
-CLI 包（207 用例，33 个测试文件）：
-
-| 分类 | 测试文件 | 说明 |
-|------|----------|------|
-| 核心引擎 | planner, suggestionEngine, specGenerator, specStrategies, taskSplitter, debugOrchestrator, claudeMdManager, historyManager, compactHistory, completedSummary, templates, approvalManager | 需求分析、规范生成、任务拆分、调试、历史管理等 |
-| 命令 | init, plan, spec, task, run, debug, review, compact | 全部 8 个 CLI 命令 |
-| Repository | taskRepository, historyRepository, logRepository, configRepository | 数据访问层 |
-| Service | taskService, projectService | 应用服务层 |
-| 工具 | fs, projectContext, display, phaseGuard | 文件 I/O、上下文、显示、阶段守卫 |
-| 类型 | schemas | Zod schema 验证 |
-| 错误 | domainErrors | 领域错误类型 |
-| 集成 | integration | 端到端流程 |
-
-Server 包（21 用例，3 个测试文件）：
-
-| 测试文件 | 说明 |
-|----------|------|
-| dataReader | 全量数据读取 |
-| dataReaderIndividual | 按需读取与分页 |
-| routes | API 路由端点 |
-
 ## 环境要求
 
 - Node.js >= 18.0.0
