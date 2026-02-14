@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, vi, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -35,7 +35,7 @@ let ctx: ReturnType<typeof buildProjectContext>;
 
 // Mock resolveProjectContext to return our temp dir context
 vi.mock('../../utils/projectContext.js', async (importOriginal) => {
-  const orig = await importOriginal<typeof import('../../utils/projectContext.js')>();
+  const orig = await importOriginal() as Record<string, unknown>;
   return {
     ...orig,
     resolveProjectContext: vi.fn(async () => ctx),
@@ -44,8 +44,6 @@ vi.mock('../../utils/projectContext.js', async (importOriginal) => {
   };
 });
 
-// Dynamically adjust loadConfig return
-import { loadConfig } from '../../utils/projectContext.js';
 
 import { runRun, runDone, runStatus } from '../run.js';
 

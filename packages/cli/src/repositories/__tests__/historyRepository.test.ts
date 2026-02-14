@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { ensureDir, writeJsonFile, readJsonFile } from '../../utils/fs.js';
+import { ensureDir, writeJsonFile } from '../../utils/fs.js';
 import { buildProjectContext } from '../../utils/projectContext.js';
 import type { ProjectContext } from '../../utils/projectContext.js';
 import {
@@ -12,10 +12,6 @@ import {
   getTaskHistory,
   summarizeHistory,
 } from '../historyRepository.js';
-import { z } from 'zod';
-
-const HistorySchema = z.object({ entries: z.array(z.any()) });
-
 describe('historyRepository', () => {
   let tmpDir: string;
   let ctx: ProjectContext;

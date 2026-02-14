@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os';
 import { buildProjectContext } from '../../utils/projectContext.js';
 import { fileExists, readJsonFile } from '../../utils/fs.js';
 import { ConfigSchema } from '../../types/index.js';
-import type { Config } from '../../types/index.js';
 
 let tempDir: string;
 

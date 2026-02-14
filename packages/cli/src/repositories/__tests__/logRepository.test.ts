@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { ensureDir, writeJsonFile } from '../../utils/fs.js';
+import { ensureDir } from '../../utils/fs.js';
 import { buildProjectContext } from '../../utils/projectContext.js';
 import type { ProjectContext } from '../../utils/projectContext.js';
 import { listLogFiles, readLogFile, getLogStats } from '../logRepository.js';
